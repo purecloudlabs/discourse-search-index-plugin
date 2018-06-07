@@ -4,7 +4,21 @@
 # authors: Genesys Dev Evangelists
 
 PLUGIN_NAME ||= 'search_index_content'.freeze
-PAGE_SIZE = 100
+PAGE_SIZE = 200
+
+INDEX_CATEGORIES = [
+    20, # Announcements
+    5,  # Platform API
+    12, # PureCloud Webhooks
+    13, # Bridge Server/Data Actions
+    14, # PureCloud Web Chat
+    15, # PureCloud Integrations
+    21, # PureCloud Applications
+    18, # Developer Tools
+    16, # Coffee House
+    19, # API Enhancement Requests
+    1,  # Uncategorized
+]
 
 after_initialize do
 
@@ -20,25 +34,33 @@ after_initialize do
     class DiscourseSearchIndex::SearchIndexController < ::ApplicationController
         requires_plugin PLUGIN_NAME
 
-
         def on_request
             params.permit(:page)
             page = params[:page].to_i
 
+            page = 1 if page == 0
+
             offset = ((page - 1) * PAGE_SIZE) 
+            return_list = []
+
             posts = Post.public_posts
+                    .where(deleted_at: nil)
+                    .where("topic_id IN (#{INDEX_CATEGORIES.join(',')})")
                     .order(created_at: :desc)
                     .limit(PAGE_SIZE).offset(offset)
-
-            return_list = []
 
             for post in posts 
                  detail = {
                      :id => post.id,
                      :url => post.url,
-                     :content => post.cooked
+                     :title => post.topic.title,
+                     :content => post.raw.gsub(/\n/,' ') #remove newline
+                                    .gsub(/:[\w_]+:/,' ') #emoji
+                                    .gsub(/[\*#~\-_|:\[\]\(\)\{\}]/,' ') #remove astricks and markdown
                  }
+                 
                  return_list.push detail
+                
             end       
                              
             response = {
@@ -56,7 +78,5 @@ after_initialize do
 
     ::Discourse::Application.routes.append do
         mount ::DiscourseSearchIndex::Engine, at: '/searchindex'
-    end
-
-   
+    end   
 end
