@@ -45,14 +45,18 @@ after_initialize do
 
             posts = Post.public_posts
                     .where(deleted_at: nil)
-                    .where("topic_id IN (#{INDEX_CATEGORIES.join(',')})")
+                    .where("topics.category_id IN (#{INDEX_CATEGORIES.join(',')})")
                     .order(created_at: :desc)
                     .limit(PAGE_SIZE).offset(offset)
+
+            #
 
             for post in posts 
                  detail = {
                      :id => post.id,
-                     :url => post.url,
+                     :topicId => post.topic_id,
+                     :url =>  "/forum/#{post.url}",
+                     :categoryId => post.topic.category_id,
                      :title => post.topic.title,
                      :content => post.raw.gsub(/\n/,' ') #remove newline
                                     .gsub(/:[\w_]+:/,' ') #emoji
