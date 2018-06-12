@@ -55,7 +55,7 @@ after_initialize do
                  detail = {
                      :id => post.id,
                      :topicId => post.topic_id,
-                     :url =>  "/forum/#{post.url}",
+                     :url =>  "/forum#{post.url}",
                      :categoryId => post.topic.category_id,
                      :title => post.topic.title,
                      :content => post.raw.gsub(/\n/,' ') #remove newline
